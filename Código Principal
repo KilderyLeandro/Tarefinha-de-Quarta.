@@ -1,0 +1,161 @@
+import psycopg2
+from datetime import datetime
+
+
+def listar_livros(cur):
+    cur.execute("""
+        SELECT Livro_id, Livro_nome, Livro_paginas, Livro_anoLancamento, Autor_nome
+        FROM Livros
+        JOIN Autores ON Livros.Livro_autor = Autores.Autor_id;
+    """)
+    
+    for livro_id, livro_nome, livro_paginas, livro_ano, autor_nome in cur.fetchall():
+        print(f"{livro_id} - {livro_nome} ({livro_paginas} páginas, publicado em {livro_ano}) - Autor: {autor_nome}")
+
+
+def listar_autores(cur):
+    cur.execute("""
+        SELECT Autor_id, Autor_nome
+        FROM Autores;
+    """)
+    
+    for autor_id, autor_nome in cur.fetchall():
+        print(f"{autor_id} - {autor_nome}")
+        
+
+def listar_clientes(cur):
+    cur.execute("""
+        SELECT Cliente_id, Cliente_nome
+        FROM Clientes;
+    """)
+    
+    for cliente_id, cliente_nome in cur.fetchall():
+        print(f"{cliente_id} - {cliente_nome}")
+
+def listar_livros(cur):
+    cur.execute("""
+        SELECT Livros.Livro_id, Livros.Livro_nome, Livros.Livro_paginas, Livros.Livro_anoLancamento, Autores.Autor_nome, Alugueis.Aluguel_data
+        FROM Livros
+        JOIN Autores ON Livros.Livro_autor = Autores.Autor_id
+        LEFT JOIN Alugueis ON Livros.Livro_id = Alugueis.Aluguel_livro;
+    """)
+    
+    for livro_id, livro_nome, livro_paginas, livro_ano, autor_nome, aluguel_data in cur.fetchall():
+        aluguel_str = str(aluguel_data) if aluguel_data else "Não alugado"
+        print(f"{livro_id} - {livro_nome} ({livro_paginas} páginas, publicado em {livro_ano}) - Autor: {autor_nome} - Alugado: {aluguel_str}")
+
+
+
+conn = psycopg2.connect(
+    host="localhost",
+    database="Biblioteca",
+    user="postgres",
+    password="postgre"
+)
+
+
+while True:
+    print('''AVISO! Adicione na seguinte ordem para bom funcionamento:
+           Autor, Livro, Adicionar Cliente, Alugar livro''')
+    print("---- MENU ----")
+    print("1 - Adicionar livro")
+    print("2 - Remover livro")
+    print("3 - Listar livros")
+    print("4 - Adicionar autor")
+    print("5 - Remover autor")
+    print("6 - Listar autores")
+    print("7 - Adicionar cliente")
+    print("8 - Listar clientes")
+    print("9 - Alugar livro")
+    print("0 - Sair")
+    opcao = input("Escolha uma opção: ")
+
+    with conn.cursor() as cur:
+       
+        if opcao == "1":
+            livro_nome = input("Digite o nome do livro: ")
+            livro_paginas = int(input("Digite o número de páginas: "))
+            livro_ano = int(input("Digite o ano de lançamento: "))
+            listar_autores(cur)
+            livro_autor = int(input("Digite o ID do autor: "))
+            cur.execute("""
+                INSERT INTO Livros (Livro_nome, Livro_paginas, Livro_anoLancamento, Livro_autor) 
+                VALUES (%s, %s, %s, %s);
+            """, (livro_nome, livro_paginas, livro_ano, livro_autor))
+            conn.commit()
+            print("Livro adicionado com sucesso!")
+        
+        
+        elif opcao == "2":
+            listar_livros(cur)
+            livro_id = int(input("Digite o ID do livro que deseja remover: "))
+            cur.execute("""
+                DELETE FROM Livros WHERE Livro_id = %s;
+            """, (livro_id,))
+            conn.commit()
+            print("Livro removido com sucesso!")
+        
+        
+        elif opcao == "3":
+            listar_livros(cur)
+        
+       
+        elif opcao == "4":
+            autor_nome = input("Digite o nome do autor: ")
+            cur.execute("""
+                INSERT INTO Autores (Autor_nome) VALUES (%s);
+            """, (autor_nome,))
+            conn.commit()
+            print("Autor adicionado com sucesso!")
+        
+        
+        elif opcao == "5":
+            listar_autores(cur)
+            autor_id = int(input("Digite o ID do autor que deseja remover: "))
+            cur.execute("""
+                DELETE FROM Autores WHERE Autor
+            WHERE Autor_id = %s;
+            """, (autor_id,))
+            conn.commit()
+            print("Autor removido com sucesso!")
+
+        elif opcao == "6":
+            listar_autores(cur)
+
+
+        elif opcao == "7":
+            cliente_nome = input("Digite o nome do cliente: ")
+            cur.execute("""
+                INSERT INTO Clientes (Cliente_nome) VALUES (%s);
+            """, (cliente_nome,))
+            conn.commit()
+            print("Cliente adicionado com sucesso!")
+
+
+        elif opcao == "8":
+            listar_clientes(cur)
+
+
+        elif opcao == "9":
+            listar_clientes(cur)
+            cliente_id = int(input("Digite o ID do cliente: "))
+            listar_livros(cur)
+            livro_id = int(input("Digite o ID do livro: "))
+            data_aluguel = datetime.now()
+            cur.execute("""
+                INSERT INTO Alugueis (Aluguel_data, Aluguel_cliente, Aluguel_livro) 
+                VALUES (%s, %s, %s);
+            """, (data_aluguel, cliente_id, livro_id))
+            conn.commit()
+            print("Livro alugado com sucesso!")
+
+
+        elif opcao == "0":
+            input("Saindo...")
+            break
+
+        
+
+
+        else:
+            print("Opção inválida. Tente novamente.")
