@@ -1,0 +1,42 @@
+import psycopg2
+
+conn = psycopg2.connect(
+    host="localhost",
+    database="Biblioteca",
+    user="postgres",
+    password="postgre"
+)
+
+cur = conn.cursor()
+
+sql_create = """
+CREATE TABLE Autores (
+    Autor_id SERIAL PRIMARY KEY,
+    Autor_nome VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Livros (
+    Livro_id SERIAL PRIMARY KEY,
+    Livro_nome VARCHAR(200) NOT NULL,
+    Livro_paginas INTEGER NOT NULL,
+    Livro_anoLancamento INTEGER NOT NULL,
+    Livro_autor INTEGER REFERENCES Autores(Autor_id)
+);
+
+CREATE TABLE Clientes (
+    Cliente_id SERIAL PRIMARY KEY,
+    Cliente_nome VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE Alugueis (
+    Aluguel_id SERIAL PRIMARY KEY,
+    Aluguel_data TIMESTAMP NOT NULL,
+    Aluguel_cliente INTEGER REFERENCES Clientes(Cliente_id),
+    Aluguel_livro INTEGER REFERENCES Livros(Livro_id)
+);
+"""
+
+cur.execute(sql_create)
+conn.commit()
+
+conn.close()
